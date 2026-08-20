@@ -34,10 +34,16 @@ Fetches Universal Studios Japan wait times and proposes an optimal touring
 order. An unofficial fan tool — say so in any UI you add.
 
 ```bash
-pip install -r requirements.txt
-streamlit run usj_app.py        # http://localhost:8501
-python3 -m pytest tests/ -q     # 37 tests, ~0.5s
+pip install -r requirements.txt      # app only
+pip install -r requirements-dev.txt  # app + pytest
+streamlit run usj_app.py             # http://localhost:8501
+python3 -m pytest tests/ -q          # 37 tests, ~0.5s
 ```
+
+Deps are split on purpose: `requirements.txt` is what Streamlit Community Cloud
+installs, so keep test-only packages in `requirements-dev.txt`. `pydeck` is
+listed explicitly even though Streamlit bundles it, because `usj_app.py` imports
+it directly.
 
 ### Layout
 
@@ -97,6 +103,28 @@ When you change scoring or timing, run the tests — several encode invariants
 that a plausible-looking route can violate: the deadline is never exceeded,
 times are monotonic, no attraction is visited twice, visited ∪ skipped covers
 the candidates.
+
+### Mobile layout (the app is used from a phone)
+
+The primary target is an iPhone browser, so **check changes at ~393px wide**, not
+just on desktop. What that costs, and what must not be undone:
+
+- One `@media (max-width: 640px)` block at the end of the `<style>` block holds
+  every mobile override. Keep mobile rules there rather than scattering them.
+- Streamlit stacks `st.columns` vertically on narrow screens. That turned the
+  four summary metrics into four full-height rows and pushed the itinerary off
+  the first screen, so the media query re-flows `stHorizontalBlock` /
+  `stColumn` into a 2×2 grid. Those are Streamlit-internal `data-testid` hooks
+  and can break on upgrade — re-check the metric row after bumping Streamlit.
+- The sidebar auto-collapses on mobile, which hides every control behind the
+  `»` button. `.usj-hint` is a mobile-only banner that says so; it is
+  `display: none` on desktop.
+- Chart axis labels are truncated to 14 chars (`shorten()`) because full
+  Japanese attraction names eat most of a 393px width. Full names stay in the
+  tooltip and the table.
+- `.streamlit/config.toml` sets `toolbarMode = "minimal"` to drop the Deploy
+  button on small screens, plus the theme. Secrets belong in
+  `.streamlit/secrets.toml`, which is gitignored — never commit it.
 
 ### Modeling caveats to preserve in the UI
 

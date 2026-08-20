@@ -28,8 +28,59 @@ streamlit run usj_app.py
 ## テスト
 
 ```bash
+pip install -r requirements-dev.txt
 python3 -m pytest tests/ -q
 ```
+
+## Webに公開する（iPhoneから使う）
+
+スマートフォン表示に対応済みです。以下の手順で、iPhoneのSafariから使えるURLを発行できます。
+
+### Streamlit Community Cloud（無料・おすすめ）
+
+1. <https://share.streamlit.io> にGitHubアカウントでサインインします。
+2. **Create app** →（既存リポジトリを選ぶ）で以下を指定します。
+
+   | 項目 | 値 |
+   | --- | --- |
+   | Repository | `geeeeeeeen/iris_streamlit` |
+   | Branch | アプリのコードが入っているブランチ |
+   | Main file path | `usj_app.py` |
+
+3. **Deploy** を押すと `https://<任意の名前>.streamlit.app` が発行されます。
+
+> **ブランチに注意。** `main` にはまだアプリのコードがありません。デプロイ時は
+> コードのあるブランチを選ぶか、先に `main` へマージしてください。
+
+依存関係は `requirements.txt` から自動でインストールされます（`pytest` は
+`requirements-dev.txt` に分けてあるので、デプロイ先には入りません）。
+
+### iPhoneのホーム画面に追加する
+
+1. Safariで発行されたURLを開きます。
+2. 共有ボタン → **ホーム画面に追加**。
+3. アプリのように全画面で起動できるようになります。
+
+### 知っておくべき制約
+
+- **無音でスリープします。** Community Cloud の無料枠はしばらくアクセスがないと
+  アプリが停止し、次回アクセス時の起動に30秒ほどかかります。
+- **リポジトリが公開なので、アプリも公開されます。** 誰でもURLを知っていれば開けます。
+- 待ち時間の取得元（queue-times.com）にデプロイ先から接続できる必要があります。
+  接続できない場合でもアプリは止まらず、推定値に切り替わります。
+
+### 同じWi-Fiのスマホから手元のPCを見る場合
+
+公開せずに試すだけなら、PCで次を実行し、表示されたNetwork URLをスマホで開きます。
+
+```bash
+streamlit run usj_app.py --server.address 0.0.0.0
+```
+
+### そのほかの選択肢
+
+Hugging Face Spaces、Render、Google Cloud Run などでも動きます。いずれも
+`requirements.txt` と `streamlit run usj_app.py` があれば構成できます。
 
 ## 構成
 

@@ -132,6 +132,61 @@ st.markdown(
         }
 
         .usj-foot { margin-top: 26px; color: #6b7689; font-size: .8rem; }
+
+        /* 既定では非表示。スマートフォン幅でのみ出す操作ヒント */
+        .usj-hint {
+            display: none;
+            margin: 0 0 12px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #eef4fb;
+            border: 1px solid var(--usj-line);
+            color: #3f4c66;
+            font-size: .82rem;
+        }
+
+        /* ------------------------------------------------------------------
+           スマートフォン（iPhone想定）。ヒーローと余白を詰め、
+           指標を2×2に折り返して、行程が早く画面に出るようにする。
+           ------------------------------------------------------------------ */
+        @media (max-width: 640px) {
+            section[data-testid="stMain"] .block-container {
+                padding: .8rem .7rem 3rem !important;
+            }
+
+            .usj-hint { display: block; }
+
+            .usj-hero { padding: 20px 18px; border-radius: 16px; margin-bottom: 12px; }
+            .usj-hero h1 { font-size: 1.3rem; line-height: 1.4; }
+            .usj-hero p { font-size: .84rem; line-height: 1.65; margin-top: 8px; }
+            .usj-chip {
+                font-size: .68rem;
+                padding: 4px 9px;
+                margin: 8px 5px 0 0;
+            }
+
+            /* 4つの指標を縦積みではなく2×2にする */
+            div[data-testid="stHorizontalBlock"] {
+                flex-wrap: wrap !important;
+                gap: .5rem !important;
+            }
+            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+                flex: 0 0 calc(50% - .25rem) !important;
+                width: calc(50% - .25rem) !important;
+                min-width: calc(50% - .25rem) !important;
+            }
+            div[data-testid="stMetricValue"] { font-size: 1.25rem !important; }
+            div[data-testid="stMetric"] { padding: 2px 0; }
+
+            /* 行程カードを詰める */
+            .usj-step { gap: 10px; padding: 11px 12px; border-radius: 12px; }
+            .usj-time { min-width: 58px; font-size: .9rem; }
+            .usj-time small { font-size: .67rem; }
+            .usj-name { font-size: .92rem; line-height: 1.5; }
+            .usj-meta { font-size: .75rem; line-height: 1.65; }
+            .usj-section { font-size: 1.06rem; }
+            .usj-badge { font-size: .66rem; padding: 2px 7px; margin-left: 6px; }
+        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -269,6 +324,11 @@ st.markdown(
         <span class="usj-chip">徒歩ルート最適化</span>
     </div>
     """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    '<div class="usj-hint">👈 左上の «&nbsp;»&nbsp;ボタンから、来園時間・必見アトラクションなどの条件を変更できます。</div>',
     unsafe_allow_html=True,
 )
 
@@ -463,10 +523,15 @@ with tab_route:
 with tab_waits:
     st.markdown('<div class="usj-section">現在の待ち時間</div>', unsafe_allow_html=True)
 
+    def shorten(name: str, limit: int = 14) -> str:
+        """グラフの軸ラベル用に名前を詰める（狭い画面で軸が幅を食うため）。"""
+        return name if len(name) <= limit else name[: limit - 1] + "…"
+
     waits_df = pd.DataFrame(
         [
             {
                 "アトラクション": a.name,
+                "表示名": shorten(a.name),
                 "エリア": a.area,
                 "待ち時間(分)": snapshot.get(a.id, 0),
                 "体験(分)": a.ride_minutes,
@@ -481,7 +546,7 @@ with tab_waits:
         .mark_bar(cornerRadiusEnd=4)
         .encode(
             x=alt.X("待ち時間(分):Q", title="待ち時間（分）"),
-            y=alt.Y("アトラクション:N", sort="-x", title=None),
+            y=alt.Y("表示名:N", sort="-x", title=None),
             color=alt.Color(
                 "エリア:N", legend=alt.Legend(orient="bottom", columns=3, title=None)
             ),
@@ -490,7 +555,9 @@ with tab_waits:
         .properties(height=max(280, 26 * len(waits_df)))
     )
     st.altair_chart(chart, width="stretch")
-    st.dataframe(waits_df, hide_index=True, width="stretch")
+    st.dataframe(
+        waits_df.drop(columns=["表示名"]), hide_index=True, width="stretch"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -559,7 +626,8 @@ with tab_map:
                 ),
                 layers=layers,
                 tooltip={"text": "{name}\n待ち {wait} 分"},
-            )
+            ),
+            height=420,
         )
 
 st.markdown(
