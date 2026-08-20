@@ -1,0 +1,8 @@
+# USJ 最適散策ルートアプリの依存関係
+streamlit>=1.40
+pandas>=2.0
+requests>=2.31
+altair>=5.0
+
+# 開発用（テスト実行）
+pytest>=8.0
